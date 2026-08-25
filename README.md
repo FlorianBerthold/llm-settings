@@ -3,10 +3,10 @@
 Production LLM serving configurations from [Sub-Net](https://sub-net.at), with
 measured benchmarks. Single host, two Blackwell GPUs:
 
-| GPU | Role | Stack |
-|---|---|---|
-| RTX PRO 6000 Blackwell (96 GB, SM120) | Qwen3.8-27B NVFP4 | `sglang/` (prod) · `vllm/qwen38-27b/` (previous prod, kept as rollback) |
-| RTX 5090 (32 GB, SM120) | Ornith-1.5-35B-A3B NVFP4 | `vllm/ornith-35b/` |
+| GPU | Model (HF checkpoint) | Speculative drafter | Stack |
+|---|---|---|---|
+| RTX PRO 6000 Blackwell (96 GB, SM120) | [RadixArk/Qwen3.8-27B-NVFP4-BF16-LMHead](https://huggingface.co/RadixArk/Qwen3.8-27B-NVFP4-BF16-LMHead) (SGLang) · [unsloth/Qwen3.8-27B-NVFP4](https://huggingface.co/unsloth/Qwen3.8-27B-NVFP4) (vLLM) | [z-lab/Qwen3.8-27B-DFlash2](https://huggingface.co/z-lab/Qwen3.8-27B-DFlash2) (SGLang) · [incoai/Qwen3.8-27B-DFlash2](https://huggingface.co/incoai/Qwen3.8-27B-DFlash2) (vLLM) | `sglang/` (prod) · `vllm/qwen38-27b/` (rollback) |
+| RTX 5090 (32 GB, SM120) | [ornith-ai/Ornith-1.5-35B-A3B-NVFP4](https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B-NVFP4) | MTP k=3 with the repaired head from [shisa-ai/Ornith-1.5-35B-A3B-MTP](https://huggingface.co/shisa-ai/Ornith-1.5-35B-A3B-MTP) | `vllm/ornith-35b/` |
 
 Both models serve OpenAI-compatible APIs behind LiteLLM + a routing proxy,
 with speculative decoding enabled and tuned on our own agent traffic.
