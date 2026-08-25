@@ -1,0 +1,52 @@
+[Unit]
+Description=SGLang OpenAI-compatible API (qwen38-27b - RadixArk/Qwen3.8-27B-NVFP4-BF16-LMHead + DFlash2)
+After=network-online.target remote-fs.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=3600
+
+Environment="HF_HOME=/srv/local-ai/huggingface"
+Environment="CUDA_DEVICE_ORDER=PCI_BUS_ID"
+Environment="CUDA_HOME=/usr/local/cuda-13.1"
+Environment="CUDA_VISIBLE_DEVICES=0"
+Environment="PATH=/srv/vllm/venv-sglang/bin:/usr/local/cuda-13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Wait for the GPU to be free before SGLang sizes its memory pool. SGLang
+# computes mem-fraction-static against TOTAL VRAM but allocates from what is
+# free at startup; a predecessor still releasing memory would either OOM the
+# launch or silently shrink the KV pool.
+ExecStartPre=/bin/bash -c "for i in $(seq 1 90); do u=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 0); [ \"$u\" -lt 2000 ] && exit 0; sleep 2; done; exit 1"
+
+ExecStart=/srv/vllm/venv-sglang/bin/python -m sglang.launch_server \
+  --model-path RadixArk/Qwen3.8-27B-NVFP4-BF16-LMHead \
+  --served-model-name local-qwen38-27b \
+  --trust-remote-code \
+  --mem-fraction-static 0.90 \
+  --attention-backend flashinfer \
+  --chunked-prefill-size 4096 \
+  --max-prefill-tokens 4096 \
+  --kv-cache-dtype fp8_e4m3 \
+  --context-length 262144 \
+  --max-running-requests 8 \
+  --speculative-algorithm DFLASH \
+  --speculative-draft-model-path z-lab/Qwen3.8-27B-DFlash2 \
+  --speculative-num-draft-tokens 8 \
+  --speculative-draft-model-quantization unquant \
+  --speculative-draft-attention-backend flashinfer \
+  --min-free-slots-delay 1 \
+  --reasoning-parser qwen3 \
+  --tool-call-parser qwen3_coder \
+  --sampling-defaults model \
+  --enable-metrics \
+  --host :: \
+  --port 8083
+
+ExecStop=/bin/kill -TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target

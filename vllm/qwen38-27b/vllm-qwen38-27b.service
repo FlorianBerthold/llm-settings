@@ -1,0 +1,41 @@
+[Unit]
+Description=vLLM OpenAI-compatible API (qwen38-27b - unsloth/Qwen3.8-27B-NVFP4)
+After=network-online.target remote-fs.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=30
+
+Environment="HF_HOME=/srv/local-ai/huggingface"
+Environment="HF_HUB_ENABLE_HF_TRANSFER=1"
+Environment="VLLM_CACHE_ROOT=/srv/vllm/cache"
+Environment="CUDA_DEVICE_ORDER=PCI_BUS_ID"
+Environment="CUDA_HOME=/usr/local/cuda-13.1"
+Environment="PATH=/srv/vllm/venv-master/bin:/usr/local/cuda-13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="CUDA_VISIBLE_DEVICES=0"
+Environment="PYTORCH_ALLOC_CONF=expandable_segments:True"
+
+# Free-VRAM gate: vLLM sizes its KV pool from free VRAM once at startup — a
+# restart onto a still-releasing predecessor silently shrinks the pool
+# (~25-40% throughput loss, no warning). 22000 = GPU shared with a ~19GB
+# co-tenant; use ~1000 on a dedicated card.
+ExecStartPre=/bin/bash -c "for i in $(seq 1 90); do u=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 0); [ \"$u\" -lt 22000 ] && exit 0; sleep 2; done; exit 1"
+
+ExecStart=/srv/vllm/venv-master/bin/vllm serve unsloth/Qwen3.8-27B-NVFP4 \
+  --host :: \
+  --port 8083 \
+  --served-model-name local-qwen38-27b \
+  --max-model-len 131072 \
+  --gpu-memory-utilization 0.75 \
+  --reasoning-parser qwen3 \
+  --enable-auto-tool-choice --tool-call-parser qwen3_coder \
+  --speculative-config '{"method":"dflash","model":"incoai/Qwen3.8-27B-DFlash2","num_speculative_tokens":5}' \
+  --kv-cache-dtype fp8 --enable-prefix-caching --async-scheduling --max-num-seqs 160 --max-num-batched-tokens 8192
+
+ExecStop=/bin/kill -TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target

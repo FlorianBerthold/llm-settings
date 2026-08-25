@@ -1,0 +1,41 @@
+[Unit]
+Description=vLLM OpenAI-compatible API (ornith-1.5-35b - ornith-ai/Ornith-1.5-35B-A3B-NVFP4)
+After=network-online.target remote-fs.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=30
+
+Environment="HF_HOME=/srv/local-ai/huggingface"
+Environment="HF_HUB_ENABLE_HF_TRANSFER=1"
+Environment="VLLM_CACHE_ROOT=/srv/vllm/cache"
+Environment="CUDA_DEVICE_ORDER=PCI_BUS_ID"
+Environment="CUDA_HOME=/usr/local/cuda-13.1"
+Environment="PATH=/srv/vllm/venv-master/bin:/usr/local/cuda-13.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="CUDA_VISIBLE_DEVICES=1"
+Environment="PYTORCH_ALLOC_CONF=expandable_segments:True"
+
+# Free-VRAM gate (dedicated card — see qwen38 unit for rationale).
+ExecStartPre=/bin/bash -c "for i in $(seq 1 90); do u=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i 1); [ \"$u\" -lt 1000 ] && exit 0; sleep 2; done; exit 1"
+
+# --speculative-config model path: local dir with the REPAIRED MTP head —
+# see README.md (stock Ornith MTP head is broken, ~34% acceptance).
+ExecStart=/srv/vllm/venv-master/bin/vllm serve ornith-ai/Ornith-1.5-35B-A3B-NVFP4 \
+  --host :: \
+  --port 8082 \
+  --served-model-name local-ornith-35b \
+  --max-model-len 131072 \
+  --gpu-memory-utilization 0.9 \
+  --reasoning-parser qwen3 \
+  --enable-auto-tool-choice --tool-call-parser qwen3_xml \
+  --speculative-config '{"method":"mtp","model":"/srv/local-ai/drafts/ornith-fixed-mtp","num_speculative_tokens":3}' \
+  --trust-remote-code \
+  --kv-cache-dtype fp8 --enable-prefix-caching --async-scheduling --language-model-only --max-num-seqs 32
+
+ExecStop=/bin/kill -TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
