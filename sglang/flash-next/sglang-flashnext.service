@@ -1,0 +1,18 @@
+[Unit]
+Description=SGLang Qwen3.8-Flash-Next (pennyroyal, NVFP4, RTX PRO 6000 GPU0)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sub
+ExecStartPre=/srv/ai-models/gpu0-free-gate.sh
+ExecStart=/srv/ai-models/serve-flash-next-gpu02.sh
+Restart=on-failure
+RestartSec=20
+TimeoutStopSec=180
+# model load ~8-12 min (135 GB checkpoint) + JIT/graph capture
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target
