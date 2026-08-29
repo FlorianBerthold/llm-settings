@@ -4,7 +4,10 @@ set -euo pipefail
 REPO_ROOT=/srv/ai-models/sglang-rtxpro6000
 SGLANG_EXE="$REPO_ROOT/.venv/bin/sglang"
 PYTHON="$REPO_ROOT/.venv/bin/python"
-TARGET_MODEL=/srv/ai-models/flash-next-nvfp4
+# 2026-08-29: abliterated build (dealignai/Qwen3.8-Flash-Next-ABLITERATED-NVFP4,
+# refusal-direction ablation, same modelopt_fp4 layout, MTP weights present).
+# Was: /srv/ai-models/flash-next-nvfp4 (RadixArk, kept on disk as rollback).
+TARGET_MODEL=/home/sub/.cache/huggingface/hub/models--dealignai--Qwen3.8-Flash-Next-ABLITERATED-NVFP4/snapshots/be794b990578ef3031eccf9f28e675a289a09ee9
 CACHE_BASE=/srv/ai-models/sglang-cache
 
 CONTEXT_LENGTH=524288
