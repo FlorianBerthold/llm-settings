@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PYTHONUNBUFFERED=1
+
 REPO_ROOT=/srv/ai-models/sglang-rtxpro6000
 SGLANG_EXE="$REPO_ROOT/.venv/bin/sglang"
 PYTHON="$REPO_ROOT/.venv/bin/python"
@@ -26,7 +28,7 @@ mkdir -p "$CACHE_BASE"/{huggingface,torch,torchinductor,triton,cuda,flashinfer,s
 
 export PATH="/srv/ai-models/sglang-rtxpro6000/.venv/bin:$PATH"
 export CUDA_DEVICE_ORDER=PCI_BUS_ID CUDA_VISIBLE_DEVICES=0
-export CUDA_HOME=/usr/local/cuda-13.3
+export CUDA_HOME=/usr/local/cuda
 export CUDACXX="$CUDA_HOME/bin/nvcc"
 export CC=/usr/bin/gcc-14 CXX=/usr/bin/g++-14
 export CUDAHOSTCXX=/usr/bin/g++-14 TORCH_CUDA_ARCH_LIST=12.0

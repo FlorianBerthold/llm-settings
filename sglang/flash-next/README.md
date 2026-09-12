@@ -21,7 +21,10 @@ real continuous batching on top.
   `configs/pennyroyal/serve-flash-next.sh`: NIXL/HiCache persistence stripped
   (host-RAM HiCache kept), venv `bin/` added to `PATH` (JIT needs the `ninja`
   *binary* — a venv package alone crashes startup after the full weight
-  load), bound to `[::1]:8001` behind a local nginx TLS proxy.
+  load), bound to `[::1]:8001` behind a local nginx TLS proxy. `CUDA_HOME`
+  follows the package-managed `/usr/local/cuda` alternative instead of a
+  versioned toolkit directory so CUDA upgrades cannot leave JIT without `nvcc`;
+  Python output is unbuffered so child-process startup failures survive cleanup.
 - `sglang-flashnext.service` — systemd unit. `TimeoutStartSec=1800` covers
   the 8–12 min cold weight load (135 GB checkpoint) + JIT/graph capture;
   warm restarts take ~4–5 min.
@@ -36,8 +39,8 @@ real continuous batching on top.
 | Component | Qualified | Ours |
 |---|---|---|
 | GPU | RTX PRO 6000 96 GB, SM120 | same |
-| Driver | 610.57.04 | same |
-| CUDA / NVCC | 13.3 / 13.3.73 | same |
+| Driver | 610.57.04 | **615.71.09** — current package; kernel/userspace match after reboot |
+| CUDA / NVCC | 13.3 / 13.3.73 | **13.4 / 13.4.59** — selected through `/usr/local/cuda` |
 | GCC | 15.3.1 | **14.2 (Debian trixie)** — works; the pin matters for their published JIT fingerprint identity, not correctness |
 | PyTorch | 2.13.0+cu130 | same |
 | FlashInfer | 0.6.17 | same |
