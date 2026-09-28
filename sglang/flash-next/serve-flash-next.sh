@@ -63,7 +63,7 @@ exec "$SGLANG_EXE" serve \
   --max-mamba-cache-size 24 --gdn-mtp-cache-mode none \
   --linear-attn-decode-backend flashinfer --linear-attn-prefill-backend flashinfer \
   --mamba-track-interval "$MAMBA_TRACK_INTERVAL" \
-  --enable-hierarchical-cache --hicache-size 32 --hicache-host-memory-mode cache \
+  --enable-hierarchical-cache --hicache-size 16 --hicache-host-memory-mode cache \
   --hicache-write-policy write_through --hicache-io-backend kernel \
   --hicache-mem-layout page_first \
   --ple-offload-embedding --trust-remote-code \
