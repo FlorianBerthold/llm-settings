@@ -47,12 +47,16 @@ export SGLANG_NUMA_BIND_V2=false SGLANG_ALLOW_OVERWRITE_LONGER_CONTEXT_LEN=1
 export SGLANG_MAMBA_CONV_DTYPE="$MAMBA_CONV_DTYPE"
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 TOKENIZERS_PARALLELISM=false
 
+# Bearer key for the OpenAI API when a reverse proxy exposes the port; /health and /metrics stay open.
+API_KEY="$(cat /etc/sglang-flashnext/api-key)"
+
 TARGET_OVERRIDES='{"text_config":{"rope_parameters":{"mrope_interleaved":true,"mrope_section":[11,11,10],"rope_type":"yarn","rope_theta":10000000,"partial_rotary_factor":0.25,"factor":2.0,"original_max_position_embeddings":262144}}}'
 
 exec "$SGLANG_EXE" serve \
   --model-path "$TARGET_MODEL" \
   --load-format safetensors \
   --served-model-name pennyroyal \
+  --api-key "$API_KEY" \
   --host ::1 --port 8001 --tp "$TP_SIZE" \
   --dtype "$COMPUTE_DTYPE" --quantization modelopt_fp4 --kv-cache-dtype "$KV_DTYPE" \
   --mem-fraction-static 0.981 \
